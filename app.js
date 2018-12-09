@@ -1,5 +1,8 @@
 Vue.use(vuelidate.default)
 
+const pizzaOrBurger = value => value === 'pizza' || value === 'burger' || !validators.helpers.req(value)
+const oldEnoughAndAlive = validators.between(12, 120)
+
 new Vue({
   el: '#app',
 
@@ -23,11 +26,35 @@ new Vue({
       age: {
         required: validators.required, // $v.form.age.required
         integer: validators.integer,
-        between: validators.between(12,120)
-      }
+        oldEnoughAndAlive
+      },
+      email: {
+        email: validators.email,
+        required: validators.requiredIf(function () {
+          return !!this.form.newsletter
+        })
+      },
+      food: {
+        pizzaOrBurger
+      },
+      githubUsername: {
+        exists (value) {
+          if (!validators.helpers.req(value)) {
+            return true
+          }
+          return axios.get(`//api.github.com/users/${value}`)
+        }
+      },
+
     }
   },
   methods: {
+    shouldAppendValidClass (field) { 
+      return !field.$invalid && field.$model && field.$dirty
+    },
+    shouldAppendErrorClass (field) { 
+      return field.$error
+    },
     submitForm () {
       this.$v.form.$touch()
       if (!this.$v.form.$invalid) {
